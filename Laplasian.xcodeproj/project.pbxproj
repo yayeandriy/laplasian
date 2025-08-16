@@ -21,12 +21,24 @@
 			remoteGlobalIDString = 4DE958DE2E507EEB00ECB2FB;
 			remoteInfo = Laplasian;
 		};
+		4DE959192E507F0000ECB2FB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4DE958D72E507EEB00ECB2FB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4DE9590A2E507F0000ECB2FB;
+			remoteInfo = LaplasianShareExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		4DE958DF2E507EEB00ECB2FB /* Laplasian.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Laplasian.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4DE958EE2E507EEC00ECB2FB /* LaplasianTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LaplasianTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4DE958F82E507EEC00ECB2FB /* LaplasianUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LaplasianUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4DE9590B2E507F0000ECB2FB /* LaplasianShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LaplasianShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		4DE9590D2E507F0000ECB2FB /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		4DE9590F2E507F0000ECB2FB /* MainInterface.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = MainInterface.storyboard; sourceTree = "<group>"; };
+		4DE959112E507F0000ECB2FB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		4DE959122E507F0000ECB2FB /* LaplasianShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LaplasianShareExtension.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -69,13 +81,41 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4DE959082E507F0000ECB2FB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		4DE959132E507F0000ECB2FB /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				4DE959142E507F0000ECB2FB /* LaplasianShareExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXBuildFile section */
+		4DE959142E507F0000ECB2FB /* LaplasianShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4DE9590B2E507F0000ECB2FB /* LaplasianShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		4DE959172E507F0000ECB2FB /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DE9590D2E507F0000ECB2FB /* ShareViewController.swift */; };
+		4DE959182E507F0000ECB2FB /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4DE9590F2E507F0000ECB2FB /* MainInterface.storyboard */; };
+/* End PBXBuildFile section */
 
 /* Begin PBXGroup section */
 		4DE958D62E507EEB00ECB2FB = {
 			isa = PBXGroup;
 			children = (
 				4DE958E12E507EEB00ECB2FB /* Laplasian */,
+				4DE9590C2E507F0000ECB2FB /* LaplasianShareExtension */,
 				4DE958F12E507EEC00ECB2FB /* LaplasianTests */,
 				4DE958FB2E507EEC00ECB2FB /* LaplasianUITests */,
 				4DE958E02E507EEB00ECB2FB /* Products */,
@@ -88,8 +128,20 @@
 				4DE958DF2E507EEB00ECB2FB /* Laplasian.app */,
 				4DE958EE2E507EEC00ECB2FB /* LaplasianTests.xctest */,
 				4DE958F82E507EEC00ECB2FB /* LaplasianUITests.xctest */,
+				4DE9590B2E507F0000ECB2FB /* LaplasianShareExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		4DE9590C2E507F0000ECB2FB /* LaplasianShareExtension */ = {
+			isa = PBXGroup;
+			children = (
+				4DE9590D2E507F0000ECB2FB /* ShareViewController.swift */,
+				4DE9590F2E507F0000ECB2FB /* MainInterface.storyboard */,
+				4DE959112E507F0000ECB2FB /* Info.plist */,
+				4DE959122E507F0000ECB2FB /* LaplasianShareExtension.entitlements */,
+			);
+			path = LaplasianShareExtension;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -102,10 +154,12 @@
 				4DE958DB2E507EEB00ECB2FB /* Sources */,
 				4DE958DC2E507EEB00ECB2FB /* Frameworks */,
 				4DE958DD2E507EEB00ECB2FB /* Resources */,
+				4DE959132E507F0000ECB2FB /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				4DE959152E507F0000ECB2FB /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				4DE958E12E507EEB00ECB2FB /* Laplasian */,
@@ -163,6 +217,25 @@
 			productReference = 4DE958F82E507EEC00ECB2FB /* LaplasianUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		4DE9590A2E507F0000ECB2FB /* LaplasianShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4DE959162E507F0000ECB2FB /* Build configuration list for PBXNativeTarget "LaplasianShareExtension" */;
+			buildPhases = (
+				4DE959072E507F0000ECB2FB /* Sources */,
+				4DE959082E507F0000ECB2FB /* Frameworks */,
+				4DE959092E507F0000ECB2FB /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LaplasianShareExtension;
+			packageProductDependencies = (
+			);
+			productName = LaplasianShareExtension;
+			productReference = 4DE9590B2E507F0000ECB2FB /* LaplasianShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -201,6 +274,7 @@
 			projectRoot = "";
 			targets = (
 				4DE958DE2E507EEB00ECB2FB /* Laplasian */,
+				4DE9590A2E507F0000ECB2FB /* LaplasianShareExtension */,
 				4DE958ED2E507EEC00ECB2FB /* LaplasianTests */,
 				4DE958F72E507EEC00ECB2FB /* LaplasianUITests */,
 			);
@@ -229,6 +303,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4DE959092E507F0000ECB2FB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4DE959182E507F0000ECB2FB /* MainInterface.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -253,6 +335,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4DE959072E507F0000ECB2FB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4DE959172E507F0000ECB2FB /* ShareViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -265,6 +355,11 @@
 			isa = PBXTargetDependency;
 			target = 4DE958DE2E507EEB00ECB2FB /* Laplasian */;
 			targetProxy = 4DE958F92E507EEC00ECB2FB /* PBXContainerItemProxy */;
+		};
+		4DE959152E507F0000ECB2FB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4DE9590A2E507F0000ECB2FB /* LaplasianShareExtension */;
+			targetProxy = 4DE959192E507F0000ECB2FB /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -520,6 +615,56 @@
 			};
 			name = Release;
 		};
+		4DE9591A2E507F0000ECB2FB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = LaplasianShareExtension/LaplasianShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2JL868AT85;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LaplasianShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = operators.yayeandriy.Laplasian.LaplasianShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		4DE9591B2E507F0000ECB2FB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = LaplasianShareExtension/LaplasianShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2JL868AT85;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LaplasianShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = operators.yayeandriy.Laplasian.LaplasianShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -555,6 +700,15 @@
 			buildConfigurations = (
 				4DE959092E507EEC00ECB2FB /* Debug */,
 				4DE9590A2E507EEC00ECB2FB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4DE959162E507F0000ECB2FB /* Build configuration list for PBXNativeTarget "LaplasianShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4DE9591A2E507F0000ECB2FB /* Debug */,
+				4DE9591B2E507F0000ECB2FB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
