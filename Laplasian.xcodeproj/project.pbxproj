@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		4DE959142E507F0000ECB2FB /* LaplasianShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4DE9590B2E507F0000ECB2FB /* LaplasianShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		4DE959172E507F0000ECB2FB /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DE9590D2E507F0000ECB2FB /* ShareViewController.swift */; };
+		4DE959182E507F0000ECB2FB /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4DE9590F2E507F0000ECB2FB /* MainInterface.storyboard */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		4DE958EF2E507EEC00ECB2FB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -29,6 +35,20 @@
 			remoteInfo = LaplasianShareExtension;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		4DE959132E507F0000ECB2FB /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				4DE959142E507F0000ECB2FB /* LaplasianShareExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		4DE958DF2E507EEB00ECB2FB /* Laplasian.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Laplasian.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -89,26 +109,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		4DE959132E507F0000ECB2FB /* Embed Foundation Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-				4DE959142E507F0000ECB2FB /* LaplasianShareExtension.appex in Embed Foundation Extensions */,
-			);
-			name = "Embed Foundation Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
-
-/* Begin PBXBuildFile section */
-		4DE959142E507F0000ECB2FB /* LaplasianShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4DE9590B2E507F0000ECB2FB /* LaplasianShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		4DE959172E507F0000ECB2FB /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DE9590D2E507F0000ECB2FB /* ShareViewController.swift */; };
-		4DE959182E507F0000ECB2FB /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4DE9590F2E507F0000ECB2FB /* MainInterface.storyboard */; };
-/* End PBXBuildFile section */
 
 /* Begin PBXGroup section */
 		4DE958D62E507EEB00ECB2FB = {
