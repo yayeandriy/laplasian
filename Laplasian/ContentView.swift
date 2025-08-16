@@ -12,28 +12,55 @@ struct ContentView: View {
     @StateObject private var settingsManager = SettingsManager()
     @State private var emailInput: String = ""
     @State private var showCheckmark = false
+    @FocusState private var isTextFieldFocused: Bool
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         ZStack {
+            // Invisible background to dismiss keyboard when tapped
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if isTextFieldFocused {
+                        isTextFieldFocused = false
+                    }
+                }
+            
             VStack(spacing: 0) {
                 // Center the input field
                 Spacer()
                 
                 HStack(spacing: 0) {
-                    TextField("email@tosend.to", text: $emailInput)
-                        .font(.title2)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 40)
-                        .padding(.vertical, 20)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(20)
-                        .onSubmit {
-                            saveConfiguration()
+                    ZStack(alignment: .trailing) {
+                        TextField("email@tosend.to", text: $emailInput)
+                            .font(.title2)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                            .padding(.vertical, 20)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(20)
+                            .focused($isTextFieldFocused)
+                            .onSubmit {
+                                saveConfiguration()
+                            }
+                            .keyboardType(.emailAddress)
+                            .textContentType(.emailAddress)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                        
+                        // Clear button - shows when focused and has text
+                        if isTextFieldFocused && !emailInput.isEmpty {
+                            Button(action: {
+                                emailInput = ""
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.gray)
+                                    .font(.title3)
+                            }
+                            .padding(.trailing, 15)
+                            .transition(.scale.combined(with: .opacity))
                         }
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                        .disableAutocorrection(true)
+                    }
                     
                     if showCheckmark {
                         Image(systemName: "checkmark.circle.fill")
