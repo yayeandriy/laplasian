@@ -25,7 +25,7 @@ enum ShareEmailError: LocalizedError, Equatable {
         case .contentProcessingFailed:
             return "Failed to process shared content."
         case .emailCompositionFailed:
-            return "Failed to compose email."
+            return "Mail app not configured. Please set up an email account in the Mail app first."
         case .sendingFailed(let error):
             return "Failed to send email: \(error.localizedDescription)"
         case .networkUnavailable:
@@ -948,6 +948,13 @@ class ShareViewController: UIViewController {
     /// Initiates the email composition and sending workflow
     private func initiateEmailWorkflow() {
         print("ShareExtension: Starting email workflow")
+        
+        // First check if Mail services are available
+        guard MFMailComposeViewController.canSendMail() else {
+            print("ShareExtension: Mail services not available")
+            handleError(ShareEmailError.emailCompositionFailed)
+            return
+        }
         
         // Check if email is configured
         guard settingsManager.isConfigured,
