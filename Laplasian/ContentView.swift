@@ -9,118 +9,80 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
     @StateObject private var settingsManager = SettingsManager()
-    @State private var showingEmailConfiguration = false
+    @State private var emailInput: String = ""
+    @State private var showCheckmark = false
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        NavigationSplitView {
-            VStack {
-                // Email Configuration Status Section
-                emailConfigurationStatus
-                
-                // Main Content List
-                List {
-                    ForEach(items) { item in
-                        NavigationLink {
-                            Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                        } label: {
-                            Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                        }
-                    }
-                    .onDelete(perform: deleteItems)
-                }
-            }
-            .navigationTitle("Laplasian")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: { showingEmailConfiguration = true }) {
-                        Label("Settings", systemImage: "gear")
-                    }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-            .sheet(isPresented: $showingEmailConfiguration) {
-                EmailConfigurationView()
-            }
-            .onAppear {
-                settingsManager.refreshConfiguration()
-            }
-        } detail: {
-            Text("Select an item")
-        }
-    }
-    
-    private var emailConfigurationStatus: some View {
-        VStack(spacing: 12) {
-            HStack {
-                Image(systemName: settingsManager.isConfigured ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                    .foregroundColor(settingsManager.isConfigured ? .green : .orange)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Email Configuration")
-                        .font(.headline)
-                    
-                    Text(configurationStatusText)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
+        ZStack {
+            VStack(spacing: 0) {
+                // Center the input field
                 Spacer()
                 
-                Button("Configure") {
-                    showingEmailConfiguration = true
+                HStack(spacing: 0) {
+                    TextField("email@tosend.to", text: $emailInput)
+                        .font(.title2)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                        .padding(.vertical, 20)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(20)
+                        .onSubmit {
+                            saveConfiguration()
+                        }
+                        .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                    
+                    if showCheckmark {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                            .font(.title2)
+                            .padding(.leading, 12)
+                            .transition(.scale.combined(with: .opacity))
+                    }
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+                .padding(.horizontal, 30)
+                
+                Spacer()
             }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
-            .padding(.horizontal)
             
-            if !settingsManager.isConfigured {
-                Text("Configure your email address to enable sharing content from other apps.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
+            // Logo at very bottom, ignoring safe area
+            VStack {
+                Spacer()
+                
+                Image(colorScheme == .dark ? "logo_white" : "logo_black")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: UIScreen.main.bounds.width * 0.6)
             }
+            .ignoresSafeArea(.all, edges: .bottom)
         }
-        .padding(.top, 8)
+        .onAppear {
+            loadCurrentConfiguration()
+        }
     }
     
-    private var configurationStatusText: String {
-        if settingsManager.isConfigured {
-            if let email = settingsManager.getEmailAddress() {
-                return "Configured: \(email)"
-            } else {
-                return "Configured"
-            }
-        } else {
-            return "Not configured - sharing disabled"
-        }
+    // MARK: - Actions
+    
+    private func loadCurrentConfiguration() {
+        settingsManager.refreshConfiguration()
+        emailInput = settingsManager.getEmailAddress() ?? ""
     }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
+    
+    private func saveConfiguration() {
+        settingsManager.saveEmailAddress(emailInput)
+        
+        // Show checkmark with animation
+        withAnimation(.easeInOut(duration: 0.3)) {
+            showCheckmark = true
         }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+        
+        // Hide checkmark after 2 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showCheckmark = false
             }
         }
     }
