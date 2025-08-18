@@ -9,6 +9,7 @@ import Foundation
 import UIKit
 import UniformTypeIdentifiers
 import MobileCoreServices
+import LinkPresentation
 
 /// Processes different types of shared content for email composition
 struct ContentProcessor {
@@ -24,9 +25,10 @@ struct ContentProcessor {
         // Generate subject from first line or first 50 characters
         let subject = generateSubjectFromText(trimmedText)
         
+        let body = "\(trimmedText)\n\nLength: \(trimmedText.count) characters"
         return EmailContent(
             subject: subject,
-            body: trimmedText,
+            body: body,
             attachments: []
         )
     }
@@ -44,9 +46,12 @@ struct ContentProcessor {
             fileName: fileName
         )
         
+        let sizeString = ByteCountFormatter.string(fromByteCount: Int64(compressedImageData.count), countStyle: .file)
+        let dimensions = "\(Int(image.size.width))x\(Int(image.size.height)) px"
+        let body = "Please find the shared image attached.\nSize: \(sizeString)\nDimensions: \(dimensions)"
         return EmailContent(
             subject: "Shared Image",
-            body: "Please find the shared image attached.",
+            body: body,
             attachments: [attachment]
         )
     }
@@ -54,8 +59,13 @@ struct ContentProcessor {
     /// Processes URL content with metadata extraction
     /// - Parameter url: The URL to process
     /// - Returns: EmailContent with URL and metadata in the body
-    static func processURL(_ url: URL) -> EmailContent {
-        let subject = "Shared Link: \(url.host ?? "Website")"
+    static func processURL(_ url: URL, metadata: [String: Any]? = nil) -> EmailContent {
+        let subject: String
+        if let title = metadata?["title"] as? String, !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            subject = title
+        } else {
+            subject = "Shared Link: \(url.host ?? "Website")"
+        }
         
         // Create body with URL and basic metadata
         var body = "Shared URL: \(url.absoluteString)\n\n"
@@ -68,12 +78,17 @@ struct ContentProcessor {
         if let scheme = url.scheme {
             body += "Protocol: \(scheme)\n"
         }
+        if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+           let items = components.queryItems, !items.isEmpty {
+            body += "Query parameters: \(items.count)\n"
+        }
         
-        return EmailContent(
-            subject: subject,
-            body: body,
-            attachments: []
-        )
+        if let data = (metadata?["previewImageData"] as? Data) ?? (metadata?["imageData"] as? Data) {
+            let html = htmlBody(withPlainText: body, inlineImageData: data, mimeType: "image/jpeg")
+            return EmailContent(subject: subject, body: html, attachments: [], isHTML: true)
+        } else {
+            return EmailContent(subject: subject, body: body, attachments: [])
+        }
     }
     
     /// Processes file content for attachment
@@ -101,7 +116,8 @@ struct ContentProcessor {
             )
             
             let subject = "Shared File: \(fileName)"
-            let body = "Please find the shared file '\(fileName)' attached.\n\nFile size: \(ByteCountFormatter.string(fromByteCount: Int64(fileData.count), countStyle: .file))"
+            let sizeString = ByteCountFormatter.string(fromByteCount: Int64(fileData.count), countStyle: .file)
+            let body = "Please find the shared file '\(fileName)' attached.\n\nFile size: \(sizeString)\nMIME: \(mimeType)"
             
             return EmailContent(
                 subject: subject,
@@ -186,5 +202,16 @@ struct ContentProcessor {
         default:
             return "application/octet-stream"
         }
+    }
+
+    private static func htmlBody(withPlainText text: String, inlineImageData: Data, mimeType: String) -> String {
+        let escaped = text
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\n", with: "<br/>")
+        let base64 = inlineImageData.base64EncodedString()
+        let imgTag = "<br/><img src=\"data:\(mimeType);base64,\(base64)\" alt=\"shared image\" style=\"max-width:100%; height:auto;\"/>"
+        return "<html><body><div style=\"font-family:-apple-system,Helvetica,Arial,sans-serif;\">\(escaped)\(imgTag)</div></body></html>"
     }
 }

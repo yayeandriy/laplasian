@@ -67,7 +67,7 @@ class EmailComposer: NSObject, MFMailComposeViewControllerDelegate {
         composer.setSubject(content.subject)
         
         // Set body
-        composer.setMessageBody(content.body, isHTML: false)
+        composer.setMessageBody(content.body, isHTML: content.isHTML)
         
         // Add attachments
         for attachment in content.attachments {
@@ -90,6 +90,11 @@ class EmailComposer: NSObject, MFMailComposeViewControllerDelegate {
     /// - Parameter sharedContent: The shared content to generate subject for
     /// - Returns: Generated email subject
     func generateSubject(for sharedContent: SharedContent) -> String {
+        if let metadata = sharedContent.metadata,
+           let title = metadata["title"] as? String,
+           !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return title
+        }
         switch sharedContent.type {
         case .text:
             return "Shared Text Content"
@@ -115,33 +120,45 @@ class EmailComposer: NSObject, MFMailComposeViewControllerDelegate {
         
         switch sharedContent.type {
         case .text(let text):
-            return header + "Content:\n\(text)"
+            var body = header + "Content:\n\(text)\n\n"
+            body += "Length: \(text.count) characters\n"
+            body += formatMetadataContext(sharedContent.metadata)
+            return body
             
         case .image:
-            return header + "An image has been shared with you. Please see the attachment."
+            var body = header + "An image has been shared with you. Please see the attachment.\n"
+            // Derive basic image details from stored data if available
+            let fileSizeString = ByteCountFormatter.string(fromByteCount: Int64(sharedContent.data.count), countStyle: .file)
+            body += "Size: \(fileSizeString)\n"
+            // If original UIImage is available, include dimensions
+            if case .image(let image) = sharedContent.type {
+                let width = Int(image.size.width)
+                let height = Int(image.size.height)
+                body += "Dimensions: \(width)x\(height) px\n"
+            }
+            body += formatMetadataContext(sharedContent.metadata)
+            return body
             
         case .url(let url):
             var body = header + "Link: \(url.absoluteString)\n"
-            
-            // Add metadata if available
-            if let metadata = sharedContent.metadata,
-               let title = metadata["title"] as? String {
-                body += "Title: \(title)\n"
+            if let host = url.host { body += "Domain: \(host)\n" }
+            if let scheme = url.scheme { body += "Protocol: \(scheme)\n" }
+            if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+               let items = components.queryItems, !items.isEmpty {
+                body += "Query parameters: \(items.count)\n"
             }
-            
-            if let metadata = sharedContent.metadata,
-               let description = metadata["description"] as? String {
-                body += "Description: \(description)\n"
-            }
-            
+            body += formatMetadataContext(sharedContent.metadata)
             return body
             
         case .file(let fileURL):
             let fileName = fileURL.lastPathComponent
             let fileSize = sharedContent.data.count
             let fileSizeString = ByteCountFormatter.string(fromByteCount: Int64(fileSize), countStyle: .file)
+            let mimeType = mimeTypeForFile(at: fileURL)
             
-            return header + "File: \(fileName)\nSize: \(fileSizeString)\n\nThe file has been attached to this email."
+            var body = header + "File: \(fileName)\nSize: \(fileSizeString)\nMIME: \(mimeType)\n\nThe file has been attached to this email.\n"
+            body += formatMetadataContext(sharedContent.metadata)
+            return body
         }
     }
     
@@ -151,6 +168,8 @@ class EmailComposer: NSObject, MFMailComposeViewControllerDelegate {
     func createEmailContent(from sharedContent: SharedContent) -> EmailContent {
         let subject = generateSubject(for: sharedContent)
         let body = formatEmailBody(for: sharedContent)
+        var finalBody = body
+        var isHTML = false
         
         var attachments: [EmailAttachment] = []
         
@@ -163,10 +182,21 @@ class EmailComposer: NSObject, MFMailComposeViewControllerDelegate {
         case .image(let image):
             let attachment = EmailAttachment.fromImage(image)
             attachments.append(attachment)
+            // Embed inline image into body as HTML
+            if let imageData = image.jpegData(compressionQuality: 0.8) {
+                let html = htmlBody(withPlainText: body, inlineImageData: imageData, mimeType: "image/jpeg")
+                finalBody = html
+                isHTML = true
+            }
             
         case .url:
             // URL content goes in body, no attachment needed
-            break
+            if let metadata = sharedContent.metadata,
+               let imageData = (metadata["previewImageData"] as? Data) ?? (metadata["imageData"] as? Data) {
+                let html = htmlBody(withPlainText: body, inlineImageData: imageData, mimeType: "image/jpeg")
+                finalBody = html
+                isHTML = true
+            }
             
         case .file(let fileURL):
             let fileName = fileURL.lastPathComponent
@@ -179,7 +209,7 @@ class EmailComposer: NSObject, MFMailComposeViewControllerDelegate {
             attachments.append(attachment)
         }
         
-        return EmailContent(subject: subject, body: body, attachments: attachments)
+        return EmailContent(subject: subject, body: finalBody, attachments: attachments, isHTML: isHTML)
     }
     
     /// Sends an email automatically with minimal user interaction
@@ -259,31 +289,56 @@ class EmailComposer: NSObject, MFMailComposeViewControllerDelegate {
         body += "Multiple items shared:\n\n"
         
         var attachments: [EmailAttachment] = []
+        var firstInlineImageData: Data?
+        var firstInlineImageMime: String = "image/jpeg"
         
         for (index, content) in sharedContents.enumerated() {
             let itemNumber = index + 1
             
             switch content.type {
             case .text(let text):
-                body += "\(itemNumber). Text Content:\n\(text)\n\n"
+                body += "\(itemNumber). Text Content:\n\(text)\n"
+                body += "   Length: \(text.count) characters\n\n"
+                body += formatMetadataContext(content.metadata)
                 
             case .image(let image):
-                body += "\(itemNumber). Image (see attachment)\n\n"
+                body += "\(itemNumber). Image (see attachment)\n"
+                let fileSizeString = ByteCountFormatter.string(fromByteCount: Int64(content.data.count), countStyle: .file)
+                let width = Int(image.size.width)
+                let height = Int(image.size.height)
+                body += "   Size: \(fileSizeString)\n"
+                body += "   Dimensions: \(width)x\(height) px\n\n"
+                body += formatMetadataContext(content.metadata)
                 let attachment = EmailAttachment.fromImage(image, fileName: "image_\(itemNumber).jpg")
                 attachments.append(attachment)
+                if firstInlineImageData == nil, let data = image.jpegData(compressionQuality: 0.8) {
+                    firstInlineImageData = data
+                    firstInlineImageMime = "image/jpeg"
+                }
                 
             case .url(let url):
                 body += "\(itemNumber). Link: \(url.absoluteString)\n"
-                if let metadata = content.metadata,
-                   let title = metadata["title"] as? String {
-                    body += "   Title: \(title)\n"
+                if let host = url.host { body += "   Domain: \(host)\n" }
+                if let scheme = url.scheme { body += "   Protocol: \(scheme)\n" }
+                body += formatMetadataContext(content.metadata)
+                if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+                   let items = components.queryItems, !items.isEmpty {
+                    body += "   Query parameters: \(items.count)\n"
                 }
                 body += "\n"
+                if firstInlineImageData == nil,
+                   let data = (content.metadata?["previewImageData"] as? Data) ?? (content.metadata?["imageData"] as? Data) {
+                    firstInlineImageData = data
+                }
                 
             case .file(let fileURL):
                 let fileName = fileURL.lastPathComponent
-                body += "\(itemNumber). File: \(fileName) (see attachment)\n\n"
+                body += "\(itemNumber). File: \(fileName) (see attachment)\n"
+                let fileSizeString = ByteCountFormatter.string(fromByteCount: Int64(content.data.count), countStyle: .file)
                 let mimeType = mimeTypeForFile(at: fileURL)
+                body += "   Size: \(fileSizeString)\n"
+                body += "   MIME: \(mimeType)\n\n"
+                body += formatMetadataContext(content.metadata)
                 let attachment = EmailAttachment(
                     data: content.data,
                     mimeType: mimeType,
@@ -292,8 +347,12 @@ class EmailComposer: NSObject, MFMailComposeViewControllerDelegate {
                 attachments.append(attachment)
             }
         }
-        
-        return EmailContent(subject: subject, body: body, attachments: attachments)
+        if let inlineData = firstInlineImageData {
+            let html = htmlBody(withPlainText: body, inlineImageData: inlineData, mimeType: firstInlineImageMime)
+            return EmailContent(subject: subject, body: html, attachments: attachments, isHTML: true)
+        } else {
+            return EmailContent(subject: subject, body: body, attachments: attachments)
+        }
     }
     
     /// Attempts to send email with automatic dismissal and minimal user interaction
@@ -324,7 +383,7 @@ class EmailComposer: NSObject, MFMailComposeViewControllerDelegate {
         composer.setSubject(content.subject)
         
         // Set body
-        composer.setMessageBody(content.body, isHTML: false)
+        composer.setMessageBody(content.body, isHTML: content.isHTML)
         
         // Add attachments
         for attachment in content.attachments {
@@ -620,6 +679,39 @@ class EmailComposer: NSObject, MFMailComposeViewControllerDelegate {
         default:
             return "application/octet-stream"
         }
+    }
+}
+
+// MARK: - Metadata Formatting
+
+private extension EmailComposer {
+    func htmlBody(withPlainText text: String, inlineImageData: Data, mimeType: String) -> String {
+        let escaped = text
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\n", with: "<br/>")
+        let base64 = inlineImageData.base64EncodedString()
+        let imgTag = "<br/><img src=\"data:\(mimeType);base64,\(base64)\" alt=\"shared image\" style=\"max-width:100%; height:auto;\"/>"
+        return "<html><body><div style=\"font-family:-apple-system,Helvetica,Arial,sans-serif;\">\(escaped)\(imgTag)</div></body></html>"
+    }
+    /// Formats common metadata fields into a readable context section
+    func formatMetadataContext(_ metadata: [String: Any]?) -> String {
+        guard let metadata = metadata, !metadata.isEmpty else { return "" }
+        var lines: [String] = []
+        func append(_ key: String, label: String) {
+            if let value = metadata[key] { lines.append("\(label): \(value)") }
+        }
+        // Common optional fields we might collect from share sheet or app
+        append("title", label: "Title")
+        append("description", label: "Description")
+        append("sourceAppName", label: "Source App")
+        append("sourceBundleId", label: "Source Bundle ID")
+        append("pageTitle", label: "Page Title")
+        append("selection", label: "Selection")
+        
+        guard !lines.isEmpty else { return "" }
+        return "\nContext:\n" + lines.joined(separator: "\n") + "\n"
     }
 }
 

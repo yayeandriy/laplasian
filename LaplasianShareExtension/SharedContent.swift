@@ -60,11 +60,13 @@ struct EmailContent {
     let subject: String
     let body: String
     let attachments: [EmailAttachment]
+    let isHTML: Bool
     
-    init(subject: String, body: String, attachments: [EmailAttachment] = []) {
+    init(subject: String, body: String, attachments: [EmailAttachment] = [], isHTML: Bool = false) {
         self.subject = subject
         self.body = body
         self.attachments = attachments
+        self.isHTML = isHTML
     }
 }
 

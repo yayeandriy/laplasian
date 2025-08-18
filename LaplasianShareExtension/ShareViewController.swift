@@ -3,6 +3,7 @@ import Social
 import MobileCoreServices
 import UniformTypeIdentifiers
 import MessageUI
+import LinkPresentation
 
 // MARK: - Embedded Models for Share Extension
 
@@ -98,11 +99,13 @@ struct EmailContent {
     let subject: String
     let body: String
     let attachments: [EmailAttachment]
+    let isHTML: Bool
     
-    init(subject: String, body: String, attachments: [EmailAttachment] = []) {
+    init(subject: String, body: String, attachments: [EmailAttachment] = [], isHTML: Bool = false) {
         self.subject = subject
         self.body = body
         self.attachments = attachments
+        self.isHTML = isHTML
     }
 }
 
@@ -248,7 +251,7 @@ class EmailComposer: NSObject, MFMailComposeViewControllerDelegate {
         
         composer.setToRecipients([recipientEmail])
         composer.setSubject(content.subject)
-        composer.setMessageBody(content.body, isHTML: false)
+        composer.setMessageBody(content.body, isHTML: content.isHTML)
         
         for attachment in content.attachments {
             composer.addAttachmentData(
@@ -325,10 +328,10 @@ struct ContentProcessor {
     static func processText(_ text: String) -> EmailContent {
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let subject = generateSubjectFromText(trimmedText)
-        
+        let body = "\(trimmedText)\n\nLength: \(trimmedText.count) characters"
         return EmailContent(
             subject: subject,
-            body: trimmedText,
+            body: body,
             attachments: []
         )
     }
@@ -342,16 +345,23 @@ struct ContentProcessor {
             mimeType: "image/jpeg",
             fileName: fileName
         )
-        
+        let sizeString = ByteCountFormatter.string(fromByteCount: Int64(compressedImageData.count), countStyle: .file)
+        let dimensions = "\(Int(image.size.width))x\(Int(image.size.height)) px"
+        let body = "Please find the shared image attached.\nSize: \(sizeString)\nDimensions: \(dimensions)"
         return EmailContent(
             subject: "Shared Image",
-            body: "Please find the shared image attached.",
+            body: body,
             attachments: [attachment]
         )
     }
     
-    static func processURL(_ url: URL) -> EmailContent {
-        let subject = "Shared Link: \(url.host ?? "Website")"
+    static func processURL(_ url: URL, metadata: [String: Any]? = nil) -> EmailContent {
+        let subject: String
+        if let title = metadata?["title"] as? String, !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            subject = title
+        } else {
+            subject = "Shared Link: \(url.host ?? "Website")"
+        }
         
         var body = "Shared URL: \(url.absoluteString)\n\n"
         
@@ -362,12 +372,17 @@ struct ContentProcessor {
         if let scheme = url.scheme {
             body += "Protocol: \(scheme)\n"
         }
+        if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+           let items = components.queryItems, !items.isEmpty {
+            body += "Query parameters: \(items.count)\n"
+        }
         
-        return EmailContent(
-            subject: subject,
-            body: body,
-            attachments: []
-        )
+        if let data = (metadata?["previewImageData"] as? Data) ?? (metadata?["imageData"] as? Data) {
+            let html = htmlBody(withPlainText: body, inlineImageData: data, mimeType: "image/jpeg")
+            return EmailContent(subject: subject, body: html, attachments: [], isHTML: true)
+        } else {
+            return EmailContent(subject: subject, body: body, attachments: [])
+        }
     }
     
     static func processFile(_ fileURL: URL) throws -> EmailContent {
@@ -391,7 +406,8 @@ struct ContentProcessor {
             )
             
             let subject = "Shared File: \(fileName)"
-            let body = "Please find the shared file '\(fileName)' attached.\n\nFile size: \(ByteCountFormatter.string(fromByteCount: Int64(fileData.count), countStyle: .file))"
+            let sizeString = ByteCountFormatter.string(fromByteCount: Int64(fileData.count), countStyle: .file)
+            let body = "Please find the shared file '\(fileName)' attached.\n\nFile size: \(sizeString)\nMIME: \(mimeType)"
             
             return EmailContent(
                 subject: subject,
@@ -462,6 +478,17 @@ struct ContentProcessor {
         default:
             return "application/octet-stream"
         }
+    }
+
+    private static func htmlBody(withPlainText text: String, inlineImageData: Data, mimeType: String) -> String {
+        let escaped = text
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\n", with: "<br/>")
+        let base64 = inlineImageData.base64EncodedString()
+        let imgTag = "<br/><img src=\"data:\(mimeType);base64,\(base64)\" alt=\"shared image\" style=\"max-width:100%; height:auto;\"/>"
+        return "<html><body><div style=\"font-family:-apple-system,Helvetica,Arial,sans-serif;\">\(escaped)\(imgTag)</div></body></html>"
     }
 }
 
@@ -790,12 +817,17 @@ class ShareViewController: UIViewController {
             }
             
             if let url = item as? URL {
-                let sharedContent = SharedContent.fromURL(url)
-                completion(.success(sharedContent))
+                // Try to fetch rich link metadata if available via LinkPresentation
+                self.fetchLinkMetadata(for: url) { metadata in
+                    let sharedContent = SharedContent.fromURL(url, metadata: metadata)
+                    completion(.success(sharedContent))
+                }
             } else if let urlString = item as? String,
                       let url = URL(string: urlString) {
-                let sharedContent = SharedContent.fromURL(url)
-                completion(.success(sharedContent))
+                self.fetchLinkMetadata(for: url) { metadata in
+                    let sharedContent = SharedContent.fromURL(url, metadata: metadata)
+                    completion(.success(sharedContent))
+                }
             } else {
                 completion(.failure(.contentProcessingFailed))
             }
@@ -845,8 +877,10 @@ class ShareViewController: UIViewController {
                     let sharedContent = SharedContent.fromText(text)
                     completion(.success(sharedContent))
                 } else if let url = item as? URL {
-                    let sharedContent = SharedContent.fromURL(url)
-                    completion(.success(sharedContent))
+                    self.fetchLinkMetadata(for: url) { metadata in
+                        let sharedContent = SharedContent.fromURL(url, metadata: metadata)
+                        completion(.success(sharedContent))
+                    }
                 } else if let image = item as? UIImage {
                     let sharedContent = SharedContent.fromImage(image)
                     completion(.success(sharedContent))
@@ -856,6 +890,28 @@ class ShareViewController: UIViewController {
             }
         } else {
             completion(.failure(.contentProcessingFailed))
+        }
+    }
+
+    private func fetchLinkMetadata(for url: URL, completion: @escaping ([String: Any]?) -> Void) {
+        if #available(iOS 13.0, *) {
+            let provider = LPMetadataProvider()
+            provider.startFetchingMetadata(for: url) { metadata, _ in
+                var dict: [String: Any] = [:]
+                if let title = metadata?.title { dict["title"] = title }
+                if let imageProvider = metadata?.imageProvider {
+                    imageProvider.loadObject(ofClass: UIImage.self) { object, _ in
+                        if let image = object as? UIImage, let data = image.jpegData(compressionQuality: 0.8) {
+                            dict["previewImageData"] = data
+                        }
+                        completion(dict.isEmpty ? nil : dict)
+                    }
+                    return
+                }
+                completion(dict.isEmpty ? nil : dict)
+            }
+        } else {
+            completion(nil)
         }
     }
     
@@ -873,7 +929,7 @@ class ShareViewController: UIViewController {
                 case .image(let image):
                     emailContent = ContentProcessor.processImage(image)
                 case .url(let url):
-                    emailContent = ContentProcessor.processURL(url)
+                    emailContent = ContentProcessor.processURL(url, metadata: sharedContent.metadata)
                 case .file(let fileURL):
                     emailContent = try ContentProcessor.processFile(fileURL)
                 }

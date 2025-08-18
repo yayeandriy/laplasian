@@ -62,7 +62,7 @@ class EmailComposer: NSObject, MFMailComposeViewControllerDelegate {
         composer.setSubject(content.subject)
         
         // Set body
-        composer.setMessageBody(content.body, isHTML: false)
+        composer.setMessageBody(content.body, isHTML: content.isHTML)
         
         // Add attachments
         for attachment in content.attachments {

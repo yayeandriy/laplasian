@@ -88,25 +88,27 @@ struct EmailContent {
     let subject: String
     let body: String
     let attachments: [EmailAttachment]
+    let isHTML: Bool
     
-    init(subject: String, body: String, attachments: [EmailAttachment] = []) {
+    init(subject: String, body: String, attachments: [EmailAttachment] = [], isHTML: Bool = false) {
         self.subject = subject
         self.body = body
         self.attachments = attachments
+        self.isHTML = isHTML
     }
     
     // MARK: - Convenience Methods
     
     /// Creates EmailContent with a single attachment
-    static func withAttachment(subject: String, body: String, attachment: EmailAttachment) -> EmailContent {
-        return EmailContent(subject: subject, body: body, attachments: [attachment])
+    static func withAttachment(subject: String, body: String, attachment: EmailAttachment, isHTML: Bool = false) -> EmailContent {
+        return EmailContent(subject: subject, body: body, attachments: [attachment], isHTML: isHTML)
     }
     
     /// Adds an attachment to existing email content
     func addingAttachment(_ attachment: EmailAttachment) -> EmailContent {
         var newAttachments = attachments
         newAttachments.append(attachment)
-        return EmailContent(subject: subject, body: body, attachments: newAttachments)
+        return EmailContent(subject: subject, body: body, attachments: newAttachments, isHTML: isHTML)
     }
     
     /// Gets the total size of all attachments
